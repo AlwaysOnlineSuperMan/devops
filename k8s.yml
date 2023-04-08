@@ -1,0 +1,6 @@
+apiserver: v1
+kind: deployment
+
+---
+apiserver: v1
+kind: Server
