@@ -60,7 +60,7 @@
             BUILD_USER = ""
             BUILD_USER_EMAIL = ""
             AUTHOR=""
-            TIME_NAME="apim"
+            TIME_NAME="devops"
             // 项目名称
             // PROJECT = ''
             // 工程名称
