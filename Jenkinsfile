@@ -34,7 +34,7 @@
             //不允许并行执行Pipeline,可用于防止同时访问共享资源等
             disableConcurrentBuilds()
             //默认跳过来自源代码控制的代码
-            //skipDefaultCheckout()
+            skipDefaultCheckout()
             //一旦构建状态进入了“Unstable”状态，就跳过此stage
             skipStagesAfterUnstable()
             //设置Pipeline运行的超时时间
