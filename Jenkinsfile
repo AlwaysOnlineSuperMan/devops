@@ -114,7 +114,7 @@ pipeline {
 		EMAIL_TO="1150550809@qq.com"
 		EMAIL_FROM="1150550809@qq.com"
 		//"DevOps Administrator<admin@devops.com>"
-		OPEN_DEBUG=false
+		OPEN_DEBUG=true
 	}
 	/*
 	阶段集：必须存在，用与设定具体的stage，包含顺序执行的一个或者多个stage命令，在pipeline内仅能使用一次，需要定义stage的名字
