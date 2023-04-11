@@ -73,6 +73,7 @@ pipeline {
 		text name: 'DESCRIPTION',description: '请输入描述', defaultValue: '【需求编号】：1111-2222-3333-2222-1111 XXXXXXXX需求\n【变更原因】：新增xxxxxxxxxxxxxxxxxxxxxxxxxxxxx接口\n【变更内容】：新增xxxxx接口\n【负 责 人】：开发: XXX 测试：XXX\n【相关材料】: http://confluence.nings.com/1111-2222-3333-2222-1111'
 		//extendedChoice name: 'DEPLOY_ENV', description: '部署环境' ,choices: ['DEV','SIT', 'UAT', 'REL']
 		//imageTag(name: 'DOCKER_IMAGE', description: '',image: 'base/svc', filter: '.*', defaultTag: '1.0',registry: 'http://harbor.nings.com', credentialId: 'xxxx-xxx-xxx-xxx-xxxx', tagOrder: 'NATURAL')
+        booleanParam name: 'IS_OPEN_DEBUG', description: '是否开始DEBUG模式',  defaultValue: false
 	}
 	//定义变量
 	environment {
@@ -104,15 +105,16 @@ pipeline {
 		//版本
 		DEPLOY_TAG = "`date '+%Y-%m-%d-%H'-${BUILD_NUMBER}`"
 		//代码路径echo "*.*.*.* github.com" >> /etc/hosts
-		CODE_REOTE_URL="http://github.com/AlwaysOnlineSuperMan"
-		SSH_REMOTE_HOST="10.211.55.42"
-		K8S_REMOTE_HOST="10.211.55.42"
+		CODE_REOTE_URL="https://github.com/AlwaysOnlineSuperMan"
+		SSH_REMOTE_HOST="10.211.55.41"
+		K8S_REMOTE_HOST="10.211.55.41"
 		//ExamineAndVerify="不同意"
 
 		//邮件通知配置
-		EMAIL_TO="115055089@qq.com"
-		EMAIL_FROM="115055089@qq.com"
+		EMAIL_TO="1150550809@qq.com"
+		EMAIL_FROM="1150550809@qq.com"
 		//"DevOps Administrator<admin@devops.com>"
+		OPEN_DEBUG=false
 	}
 	/*
 	阶段集：必须存在，用与设定具体的stage，包含顺序执行的一个或者多个stage命令，在pipeline内仅能使用一次，需要定义stage的名字
@@ -124,15 +126,15 @@ pipeline {
 			steps {
 				script{
 			   
-			
+			    env.OPEN_DEBUG=env.IS_OPEN_DEBUG
 				env.VERSION_TAG=new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())+"${env.BUILD_NUMBER}"
 				echo '请确在2分钟内认授权！'
 				timeout(time: 2, unit: 'MINUTES') {
 					emailext body: '${ENV,var="JOB_NAME"}正在执行第${ENV,var="BUILD_ID"}次构建，<A href="${ENV,var="JENKINS_URL"}blue/organizations/jenkins/${ENV,var="JOB_NAME"}/detail/${ENV,var="JOB_NAME"}/${ENV,var="BUILD_ID"}/pipeline"}">请在2分钟内授权</A>', subject: "DevOpsVerify:${env.JOB_NAME}-Build#${env.BUILD_NUMBER}", to: "${EMAIL_TO}",from: "${EMAIL_FROM}"
 					env.ExamineAndVerify =input message: 'Welcome to use the automated intelligent management, All rights reserved, please obtain Nings’s license before use,unlicensed, illegal reproduction, use and so on are strictly prohibited.Please authorize use!', ok: '授权', parameters: [text(defaultValue: '同意构建部署',description: '审核意见（非必输）', name: 'ExamineAndVerify')], submitter: 'admin'
 					//input message: 'Welcome to use the automated intelligent management, All rights reserved, please obtain Nings’s license before use,unlicensed, illegal reproduction, use and so on are strictly prohibited.Please authorize use!', ok: '授权', submitter: 'admin'
-					 echo "debug info: 审核意见 ${env.ExamineAndVerify}"
-					 sh "echo 环境参数 && printenv"
+					 if(env.OPEN_DEBUG=="true") echo "debug info: 审核意见 ${env.ExamineAndVerify}"
+					 if(env.OPEN_DEBUG=="true") sh "echo info:环境参数 && printenv"
 				}
 				
 				}
@@ -141,12 +143,12 @@ pipeline {
 		stage('Parameter checking') {
 			steps{
 				script{
-					echo "debug info: 版本 ${VERSION_TAG}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: 版本 ${VERSION_TAG}"
 					if(VERSION_TAG == null || VERSION_TAG == ""){
 						echo "⭐构建失败:请输入版本号Revision(⊙﹏⊙)！"
 						sh "exit 1"
 					}
-					echo "debug info:描述 ${env.DESCRIPTION}"
+					if(env.OPEN_DEBUG=="true") echo "debug info:描述 ${env.DESCRIPTION}"
 					if(env.DESCRIPTION == null || env.DESCRIPTION == ""){
 						echo "⭐构建失败:请输入描述DESCRIPTION(⊙﹏⊙)！"
 						sh "exit 1"
@@ -156,7 +158,7 @@ pipeline {
 					wrap([$class: 'BuildUser']){
 						AUTHOR = "${env.BUILD_USER_EMAIL} ${env.BUILD_USER} ${env.BUILD_TAG}"
 					}
-					echo "debug info: 构建用户 ${AUTHOR}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: 构建用户 ${AUTHOR}"
 					if(AUTHOR == null || AUTHOR == ""){
 						echo "⭐构建失败:无法获取负责人AUTHOR信息(⊙﹏⊙)！"
 						sh "exit 1"
@@ -165,7 +167,7 @@ pipeline {
 					
 				   
 
-					echo "debug info: DEPLOY_FRONTEND: ${env.DEPLOY_FRONTEND}  DEPLOY_BACKEND: ${env.DEPLOY_BACKEND} "
+					if(env.OPEN_DEBUG=="true") echo "debug info: DEPLOY_FRONTEND: ${env.DEPLOY_FRONTEND}  DEPLOY_BACKEND: ${env.DEPLOY_BACKEND} "
 					if(env.DEPLOY_FRONTEND == "false" &&  env.DEPLOY_BACKEND ==  "false" ){
 						echo "⭐构建失败:请选择构建项(⊙﹏⊙)！"
 						sh "exit 1"
@@ -173,16 +175,16 @@ pipeline {
 
 
 					env.WORKSPACE=JENKINS_HOME+"/projects/"+env.TIME_NAME+"/"+env.DEPLOY_ENV
-					echo "debug info: 构建workspace ${WORKSPACE}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: 构建workspace ${WORKSPACE}"
 
 					env.RemoteCodeRepository=WORKSPACE+"/RemoteCodeRepository"
-					echo "debug info: RemoteCodeRepository: ${RemoteCodeRepository}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: RemoteCodeRepository: ${RemoteCodeRepository}"
 
 					env.GenDeployPackage=WORKSPACE+"/GenDeployPackage"
-					echo "debug info: GenDeployPackage: ${GenDeployPackage}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: GenDeployPackage: ${GenDeployPackage}"
 
 					env.BUILID_WORK_SPACE=GenDeployPackage+"/"+VERSION_TAG
-					echo "debug info: BUILID_WORK_SPACE: ${BUILID_WORK_SPACE}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: BUILID_WORK_SPACE: ${BUILID_WORK_SPACE}"
 
 					env.CURR_AUTO_DEPLOY_HOME=RemoteCodeRepository+"/AutoDeploy"
 					env.CURR_ENV_FRONTEND_HOME=RemoteCodeRepository+"/frontend"
@@ -202,7 +204,7 @@ pipeline {
 					//def currCfgRemarks = slurper.parseText(currCfgRemarksJson)
 					//println(currCfgRemarks)
 					env.CfgRemarks=slurper.parseText(JsonOutput.toJson(["envType":env.DEPLOY_ENV,"Author":AUTHOR,"Revision":VERSION_TAG,"fileTime":false]))
-					echo env.CfgRemarks
+					if(env.OPEN_DEBUG=="true") echo env.CfgRemarks
 				}
 
 
@@ -224,13 +226,14 @@ pipeline {
 				'''
 				script{
 					if(env.DEPLOY_FRONTEND == "true" ){
-						echo "debug info: git frontend code ${CODE_REOTE_URL}/backend.git ${CURR_ENV_FRONTEND_HOME}"
+						if(env.OPEN_DEBUG=="true") echo "debug info: git frontend code ${CODE_REOTE_URL}/backend.git ${CURR_ENV_FRONTEND_HOME}"
 						//拉取代码
 						checkout scmGit(
 							branches: [[name: "${DEPLOY_ENV}"]],
 							extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${CURR_ENV_FRONTEND_HOME}"]],
-							userRemoteConfigs: [[credentialsId: 'a922577c-0b17-4576-986d-dd27d40bba83', url: "${CODE_REOTE_URL}/frontend.git"]]
+							userRemoteConfigs: [[credentialsId: 'AlwaysOnlineSuperMan', url: "${CODE_REOTE_URL}/frontend.git"]]
 						)
+						//credentialsId-github-nings/AlwaysOnlineSuperMan/AlwaysOnline
 						//输入选择
 						//input id: 'SelectSvc', message: '', ok: '确认', parameters: [choice(choices: ['a', 'b', 'c', 'd', 'e'], description: '微服务服务列表', name: 'podname')], submitter: 'admin'
 						
@@ -247,22 +250,23 @@ pipeline {
 							deploy_k8s_remote.user = "${username}"
 							deploy_k8s_remote.password = "${password}"
 						}
+						//kubectl get all -A
 						sshCommand remote: deploy_k8s_remote, command:"""
-							kubectl get all -A
+							hostname -i
 						"""
 						
 					}
 					if(env.DEPLOY_BACKEND == "true" ){
-						echo "debug info: git backend code ${CODE_REOTE_URL}/backend.git ${CURR_ENV_FRONTEND_HOME}"
+						if(env.OPEN_DEBUG=="true") echo "debug info: git backend code ${CODE_REOTE_URL}/backend.git ${CURR_ENV_FRONTEND_HOME}"
 						//拉取代码
 						checkout scmGit(
 							branches: [[name: "${DEPLOY_ENV}"]],
 							extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${CURR_ENV_FRONTEND_HOME}"]],
-							userRemoteConfigs: [[credentialsId: 'a922577c-0b17-4576-986d-dd27d40bba83', url: "${CODE_REOTE_URL}/backend.git"]]
+							userRemoteConfigs: [[credentialsId: 'AlwaysOnlineSuperMan', url: "${CODE_REOTE_URL}/backend.git"]]
 						)
 					}
 
-					echo "debug info: ${env.AUTHOR} ${AUTHOR}  ${VERSION_TAG}  ${env.DESCRIPTION}"
+					if(env.OPEN_DEBUG=="true") echo "debug info: ${env.AUTHOR} ${AUTHOR}  ${VERSION_TAG}  ${env.DESCRIPTION}"
 				}
 			}
 		}
